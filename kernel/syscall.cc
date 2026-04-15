@@ -44,19 +44,6 @@ syscallHandler(SyscallFrame *frame) {
       KPANIC("unknown arch_prctl ?\n", Dec(frame->rdi));
     }
 
-  case 1: /* write */
-  {
-    /* think of all the things that could go wrong here */
-    /* how can a malicious user exploit this? */
-    char *buffer = (char *)frame->rsi;
-    uint64_t len = frame->rdx;
-    for (uint64_t i = 0; i < len; i++) {
-      putch(buffer[i]);
-    }
-    return len;
-  }
-  case 60: /* exit */
-    Thread::stop();
   default:
     SAY("syscall ?\n", Dec(frame->rax));
     KPANIC("unknown syscall ?\n", Dec(frame->rax));
