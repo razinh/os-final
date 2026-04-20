@@ -44,6 +44,9 @@ public:
     static uint64_t rx_count() { return rx_count_; }
     static uint64_t tx_drops() { return tx_drops_; }
 
+    // fake mac address
+    static constexpr uint8_t MAC[6] = {0x52, 0x54, 0x00, 0x12, 0x34, 0x56};
+
 private:
     static volatile SharedNICMemory* mem_;
     static ReceiveCallback receive_callback_;
