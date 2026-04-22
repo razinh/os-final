@@ -83,7 +83,10 @@ static void test_post() {
 }
 
 void kernel_main() {
+    SAY("STARTING");
     net::net_init();
+
+    SAY("INITALIZED");
 
     test_get();
     test_post();
