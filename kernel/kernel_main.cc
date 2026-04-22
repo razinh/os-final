@@ -2,6 +2,7 @@
 #include "ext2.h"
 #include "print.h"
 #include "ramdisk.h"
+#include "net/net_init.h"
 
 void kernel_main() {
   StrongRef<BlockIO> ide{new RamDisk("/boot/ramdisk", 0)};
@@ -9,6 +10,8 @@ void kernel_main() {
 
   KPRINT("block size is ?\n", Dec(fs->get_block_size()));
   KPRINT("inode size is ?\n", Dec(fs->get_inode_size()));
+
+  net::net_init();
 
   auto init = fs->find(fs->root, "init");
 

@@ -2,10 +2,11 @@
 #include "spin_lock.h"
 #include "lib/kstd.h"
 #include "print.h"
+#include "vmm.h"
+#include "physmem.h"
 
 namespace net {
 
-// physical address where QEMU maps shared memory
 #define SHARED_MEM_PHYS_ADDR 0xFEBD0000UL
 
 // ring buffer constants
@@ -24,15 +25,27 @@ static SpinLock tx_lock;
 static SpinLock rx_lock;
 
 void NIC::init() {
-    // Map shared memory
-    mem_ = reinterpret_cast<volatile SharedNICMemory*>(SHARED_MEM_PHYS_ADDR);
-    
+    // Map the ivshmem physical region into kernel virtual address space.
+    // The kernel uses a Higher Half Direct Map (HHDM): VA = PA + Sys::hhdm_offset.
+    // We call impl::map() for each page so the kernel page tables have valid
+    // entries before we dereference mem_.
+    constexpr uintptr_t phys  = SHARED_MEM_PHYS_ADDR;
+    constexpr size_t    pages = (sizeof(SharedNICMemory) + FRAME_SIZE - 1) >> LOG_FRAME_SIZE;
+
+    for (size_t i = 0; i < pages; i++) {
+        PA pa(phys + i * FRAME_SIZE);
+        VA va(pa); 
+        impl::map(va.vpn(), pa.ppn(), false, true);
+    }
+
+    mem_ = reinterpret_cast<volatile SharedNICMemory*>(phys + Sys::hhdm_offset);
+
     // Initialize ring pointers
     mem_->rx.head = 0;
     mem_->rx.tail = 0;
     mem_->tx.head = 0;
     mem_->tx.tail = 0;
-    
+
     KPRINT("[NIC] Initialized\n");
 }
 

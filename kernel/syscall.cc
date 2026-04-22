@@ -13,6 +13,7 @@
 
 #include "syscall.h"
 
+#include "debug.h"
 #include "per_core.h"
 #include "print.h"
 #include "thread.h"
@@ -26,6 +27,20 @@ syscallHandler(SyscallFrame *frame) {
   // SAY("rax = ?\n", Dec(frame->rax));
 
   switch (frame->rax) {
+  case SYS_write: {
+    // rdi=fd, rsi=buf, rdx=count
+    const char *p = reinterpret_cast<const char *>(frame->rsi);
+    uint64_t count = frame->rdx;
+    if (frame->rdi == 1 || frame->rdi == 2) {
+      for (uint64_t i = 0; i < count; i++) putch(p[i]);
+    }
+    return count;
+  }
+
+  case SYS_exit:
+  case SYS_exit_group:
+    shutdown(false);
+
   case SYS_brk: {
     const auto me = impl::TCB::current();
     const auto new_brk = frame->rdi;

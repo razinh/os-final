@@ -14,6 +14,9 @@
 #pragma once
 
 enum SyscallNumber : int {
-  SYS_brk = 12,
+  SYS_write      = 1,
+  SYS_brk        = 12,
+  SYS_exit       = 60,
   SYS_arch_prctl = 158,
+  SYS_exit_group = 231,
 };
