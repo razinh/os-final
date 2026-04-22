@@ -1,6 +1,5 @@
 #include "http.h"
 #include "socket_api.h"
-#include "lib/kstd.h"
 #include "machine.h"
 
 namespace net {
@@ -25,15 +24,12 @@ size_t HttpRequest::build(char* buffer, size_t buffer_size) const {
     size_t offset = 0;
     const char* method_str = "";
     switch (method_) {
-        case Method::GET:
-            method_str = "GET";
-            break;
-        case Method::POST:
-            method_str = "POST";
-            break;
-        case Method::HEAD:
-            method_str = "HEAD";
-            break;
+        case Method::GET:    method_str = "GET";    break;
+        case Method::POST:   method_str = "POST";   break;
+        case Method::PUT:    method_str = "PUT";    break;
+        case Method::DELETE: method_str = "DELETE"; break;
+        case Method::PATCH:  method_str = "PATCH";  break;
+        case Method::HEAD:   method_str = "HEAD";   break;
     }
     offset += snprintf(buffer + offset, buffer_size - offset, "%s %s HTTP/1.0\r\n", method_str, path_);
 
@@ -51,6 +47,8 @@ size_t HttpRequest::build(char* buffer, size_t buffer_size) const {
         offset += snprintf(buffer + offset, buffer_size - offset, "%s: %s\r\n",
             custom_headers_[i].key, custom_headers_[i].value);
     }
+    // blank line that terminates the header section
+    offset += snprintf(buffer + offset, buffer_size - offset, "\r\n");
     return offset;
 }
 
@@ -194,12 +192,24 @@ int HttpClient::post(const char* host, uint16_t port, const char* path, const ch
     return do_request(HttpRequest::Method::POST, host, port, path, body, body_length, response_buffer, buffer_size);
 }
 
+int HttpClient::put(const char* host, uint16_t port, const char* path, const char* body, size_t body_length, char* response_buffer, size_t buffer_size) {
+    return do_request(HttpRequest::Method::PUT, host, port, path, body, body_length, response_buffer, buffer_size);
+}
+
+int HttpClient::delete_request(const char* host, uint16_t port, const char* path, char* response_buffer, size_t buffer_size) {
+    return do_request(HttpRequest::Method::DELETE, host, port, path, nullptr, 0, response_buffer, buffer_size);
+}
+
+int HttpClient::patch(const char* host, uint16_t port, const char* path, const char* body, size_t body_length, char* response_buffer, size_t buffer_size) {
+    return do_request(HttpRequest::Method::PATCH, host, port, path, body, body_length, response_buffer, buffer_size);
+}
+
 int HttpClient::do_request(HttpRequest::Method method, const char* host, uint16_t port, const char* path, 
     const char* request_body, size_t request_body_length, char* response_buffer, size_t buffer_size) {
 
+    char content_length[32] = {};  // must outlive request.build()
     HttpRequest request(method, host, path);
     if (request_body && request_body_length > 0) {
-        char content_length[32];
         snprintf(content_length, sizeof(content_length), "%zu", request_body_length);
         request.add_header("Content-Length", content_length);
         request.add_header("Content-Type", "application/x-www-form-urlencoded");

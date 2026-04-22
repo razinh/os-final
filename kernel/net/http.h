@@ -10,6 +10,9 @@ public:
     enum class Method {
         GET,
         POST,
+        PUT,
+        DELETE,
+        PATCH,
         HEAD
     };
 
@@ -73,15 +76,29 @@ private:
 
 class HttpClient {
 public:
-    // perform an HTTP GET request and return the number of bytes received, -1 on error
-    static int get(const char* host, uint16_t port, const char* path, char* response_buffer, size_t buffer_size);
+    static int get(const char* host, uint16_t port, const char* path,
+                   char* response_buffer, size_t buffer_size);
 
-    // perform an HTTP POST request and return the number of bytes received, -1 on error
-    static int post(const char* host, uint16_t port, const char* path, const char* body, size_t body_length, char* response_buffer, size_t buffer_size);
+    static int post(const char* host, uint16_t port, const char* path,
+                    const char* body, size_t body_length,
+                    char* response_buffer, size_t buffer_size);
+
+    static int put(const char* host, uint16_t port, const char* path,
+                   const char* body, size_t body_length,
+                   char* response_buffer, size_t buffer_size);
+
+    static int delete_request(const char* host, uint16_t port, const char* path,
+                              char* response_buffer, size_t buffer_size);
+
+    static int patch(const char* host, uint16_t port, const char* path,
+                     const char* body, size_t body_length,
+                     char* response_buffer, size_t buffer_size);
 
 private:
-    static int do_request(HttpRequest::Method method, const char* host, uint16_t port, const char* path, 
-        const char* request_body, size_t request_body_length, char* response_buffer, size_t buffer_size);
+    static int do_request(HttpRequest::Method method, const char* host,
+                          uint16_t port, const char* path,
+                          const char* request_body, size_t request_body_length,
+                          char* response_buffer, size_t buffer_size);
 };
 
 } // namespace net
