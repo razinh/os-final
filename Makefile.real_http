@@ -1,0 +1,21 @@
+CXX      = g++
+CXXFLAGS = -std=c++23 -Wall -Wextra -g -I.
+
+HTTP_IMPL   = kernel/net/http.cc
+REAL_SOCKET = kernel/test/real_socket.cc
+TEST_MAIN   = kernel/test/real_http_test.cc
+
+all: test
+
+test: real_http_test
+	@echo "Running live HTTP test..."
+	@./real_http_test
+
+real_http_test: $(HTTP_IMPL) $(REAL_SOCKET) $(TEST_MAIN)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+	@echo "Compiled real_http_test"
+
+clean:
+	rm -f real_http_test
+
+.PHONY: all test clean
