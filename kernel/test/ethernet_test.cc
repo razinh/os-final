@@ -1,8 +1,6 @@
 #include "kernel/net/ethernet.h"
 #include "kernel/net/nic.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include "lib/kstd.h"
 
 using namespace net;
 using namespace net::ethernet;

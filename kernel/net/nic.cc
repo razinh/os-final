@@ -1,6 +1,6 @@
 #include "nic.h"
 #include "spin_lock.h"
-#include <string.h>
+#include "lib/kstd.h"
 #include "print.h"
 
 namespace net {
@@ -24,20 +24,19 @@ static SpinLock tx_lock;
 static SpinLock rx_lock;
 
 void NIC::init() {
-    // map shared memory
+    // Map shared memory
     mem_ = reinterpret_cast<volatile SharedNICMemory*>(SHARED_MEM_PHYS_ADDR);
+    
+    // Initialize ring pointers
     mem_->rx.head = 0;
     mem_->rx.tail = 0;
     mem_->tx.head = 0;
     mem_->tx.tail = 0;
-
+    
     KPRINT("[NIC] Initialized\n");
-    KPRINT("[NIC] Shared memory at: 0x?\n", Hex(SHARED_MEM_PHYS_ADDR));
-    KPRINT("[NIC] RX ring at: ?\n", Ptr(&mem_->rx));
-    KPRINT("[NIC] TX ring at: ?\n", Ptr(&mem_->tx));
 }
 
-bool NIC::send(const uint8_t* data, uint16_t length) {
+bool NIC::send(const uint8_t* data, size_t length) {
     if (!mem_) {
         KPRINT("[NIC] Error: NIC not initialized\n");
         return false;

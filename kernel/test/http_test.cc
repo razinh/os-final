@@ -1,6 +1,6 @@
 #include "kernel/net/http.h"
-#include <stdio.h>
-#include <string.h>
+#include "kernel/lib/kstd.h"
+#include "kernel/machine.h"
 
 using namespace net;
 

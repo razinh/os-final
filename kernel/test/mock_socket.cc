@@ -1,6 +1,5 @@
 #include "kernel/net/socket_api.h"
-#include <stdio.h>
-#include <string.h>
+#include "kernel/lib/kstd.h"
 
 // Mock HTTP responses for testing HttpClient without real network
 static const char MOCK_RESPONSE[] =

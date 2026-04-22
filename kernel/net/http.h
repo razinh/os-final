@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stddef.h>
+#include "lib/kstd.h"
 
 namespace net {
 

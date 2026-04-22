@@ -1,7 +1,7 @@
 #include "http.h"
 #include "socket_api.h"
-#include "string.h"
-#include "stdio.h"
+#include "lib/kstd.h"
+#include "machine.h"
 
 namespace net {
 
@@ -235,7 +235,7 @@ int HttpClient::do_request(HttpRequest::Method method, const char* host, uint16_
     // receive response
     size_t total_received = 0;
     while (total_received < buffer_size) {
-        int n = socket_receive(sock, response_buffer + total_received, buffer_size - total_received - 1);
+        int n = socket_recv(sock, response_buffer + total_received, buffer_size - total_received - 1);
         if (n < 0) {
             socket_close(sock);
             return -1;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stddef.h>
+#include "lib/kstd.h"
 
 // Socket abstraction, allows testing with mock implementation or real kernel sockets
 
@@ -20,7 +20,7 @@ int socket_connect(int sockfd, const char* host, uint16_t port);
 int socket_send(int sockfd, const void* data, size_t length);
 
 // receive data
-int socket_receive(int sockfd, void* buffer, size_t length);
+int socket_recv(int sockfd, void* buffer, size_t length);
 
 // close socket
 void socket_close(int sockfd);

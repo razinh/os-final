@@ -25,7 +25,7 @@ ORIGIN_REPO=${shell git config --get remote.origin.url | sed -e s'/.git$$//'}
 STUDENT_NAME=${shell echo ${ORIGIN_REPO} | sed -e 's/.*_//'}
 TESTS_REPO=${shell echo ${ORIGIN_REPO} | sed -e 's/_${STUDENT_NAME}/__tests/'}
 
-SRCFILES := $(shell find kernel -type f 2>/dev/null | sort)
+SRCFILES := $(shell find kernel -type f -not -path "*/test/*" 2>/dev/null | sort)
 CFILES := $(filter %.c,$(SRCFILES))
 CCFILES := $(filter %.cc,$(SRCFILES))
 SFILES := $(filter %.S,$(SRCFILES))
@@ -69,7 +69,19 @@ QEMU_FLAGS = -no-reboot \
 	     --serial file:$*.raw \
 	     -drive file=build/$*.img,index=0,media=disk,format=raw,file.locking=off \
              -drive file=$*.data,index=3,media=disk,format=raw,file.locking=off \
-	     -device isa-debug-exit,iobase=0xf4,iosize=0x04
+	     -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+	     -object memory-backend-file,id=shmem,size=1M,mem-path=/tmp/nic_shmem,share=on \
+	     -device ivshmem-plain,memdev=shmem
+
+# Create shared memory file for NIC
+/tmp/nic_shmem:
+	@rm -f /tmp/nic_shmem
+	@dd if=/dev/zero of=/tmp/nic_shmem bs=1M count=1 2>/dev/null
+	@echo "Created shared memory file: /tmp/nic_shmem"
+
+# Make sure shared memory exists before running tests
+${TEST_RAWS}: /tmp/nic_shmem
+
 
 TIME = $(shell which time)
 

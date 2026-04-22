@@ -2,7 +2,7 @@
 
 #include "nic.h"
 #include "print.h"
-#include "string.h"
+#include "lib/kstd.h"
 
 namespace net {
 namespace ethernet {

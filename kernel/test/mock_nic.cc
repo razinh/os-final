@@ -1,10 +1,7 @@
 // Mock NIC implementation for standalone ethernet layer tests.
-// Replaces nic.cc so ethernet.cc can be compiled and tested outside the
-// kernel build.  Kernel debug stubs (puts, putch, etc.) live in
-// stub_kernel.cc to avoid the stdio.h / debug.h return-type conflict.
 
 #include "kernel/net/nic.h"
-#include <string.h>
+#include "kernel/lib/kstd.h"
 
 namespace net {
 
