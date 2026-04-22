@@ -184,6 +184,50 @@ build/kernel.elf: common.flags Makefile script.ld $(OFILES)
 	@mkdir -p build
 	$(LD) $(LDFLAGS) $(OFILES) -o $@
 
+# ---- HTTP kernel test (t_http) ----
+# Builds a separate kernel with kernel_http_test_main.cc instead of kernel_main.cc.
+KHTTP_SRCFILES := $(shell find kernel -type f \
+    -not -path "*/test/*" \
+    -not -name "kernel_main.cc" \
+    2>/dev/null | sort)
+KHTTP_CFILES   := $(filter %.c,  $(KHTTP_SRCFILES))
+KHTTP_CCFILES  := $(filter %.cc, $(KHTTP_SRCFILES))
+KHTTP_SFILES   := $(filter %.S,  $(KHTTP_SRCFILES))
+KHTTP_OFILES   := $(addprefix build/khttp/,\
+    $(KHTTP_CFILES:.c=.c.o) $(KHTTP_CCFILES:.cc=.cc.o) $(KHTTP_SFILES:.S=.S.o))
+KHTTP_TEST_OBJ  = build/khttp/kernel/test/kernel_http_test_main.cc.o
+
+build/khttp/%.c.o: %.c Makefile common.flags
+	@mkdir -p "$(dir $@)"
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+build/khttp/%.cc.o: %.cc Makefile common.flags
+	@mkdir -p "$(dir $@)"
+	$(CXX) -I${shell pwd} $(CCFLAGS) $(CPPFLAGS) -c $< -o $@
+
+build/khttp/%.S.o: %.S Makefile common.flags
+	@mkdir -p "$(dir $@)"
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+build/khttp.elf: common.flags Makefile script.ld $(KHTTP_OFILES) $(KHTTP_TEST_OBJ)
+	@mkdir -p build
+	$(LD) $(LDFLAGS) $(KHTTP_OFILES) $(KHTTP_TEST_OBJ) -o $@
+
+build/t_http.img: build/khttp.elf Makefile limine/limine t_http.data ${LIMINE_FILES}
+	rm -f $@
+	dd if=/dev/zero bs=1M seek=20 count=0 of=$@ > image.debug 2>&1
+	PATH=$$PATH:/usr/sbin:/sbin sgdisk $@ -n 1:2048 -t 1:ef00 -m 1 >> image.debug 2>&1
+	./limine/limine bios-install $@ >> image.debug 2>&1
+	mformat -i $@@@1M >> image.debug 2>&1
+	mmd -i $@@@1M ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine >> image.debug 2>&1
+	mcopy -i $@@@1M build/khttp.elf ::/boot/kernel >> image.debug 2>&1
+	mcopy -i $@@@1M t_http.data ::/boot/ramdisk >> image.debug 2>&1
+	mcopy -i $@@@1M ${LIMINE_FILES} ::/boot/limine >> image.debug 2>&1
+	touch $@
+
+# t_http needs extra time for network round-trips
+t_http.raw: QEMU_TIMEOUT = 30
+
 # Compilation rules for *.S files.
 build/%.S.o: %.S Makefile common.flags
 	@mkdir -p "$(dir $@)"
