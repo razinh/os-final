@@ -21,7 +21,7 @@ static const char*    TARGET_IP   = "128.83.120.168";   // e.g. "192.168.1.42"
 static const uint16_t TARGET_PORT = 8000;                 // e.g. 8080
 static const char*    GET_PATH    = "/";                // e.g. "/api/items"
 static const char*    POST_PATH   = "/";                // e.g. "/api/items"
-static const char*    POST_BODY   = "seconds=1";         // form-encoded or JSON body
+static const char*    POST_BODY   = "msg=1";         // form-encoded or JSON body
 // ============================================================
 
 static int tests_run    = 0;
@@ -74,6 +74,8 @@ static void test_post() {
     }
 
     int s = resp.status_code();
+    printf("POST response status: ?\n", Dec(s));
+    printf("POST response body: ?\n", resp.body());
     if (s >= 200 && s < 300) {
         SAY("PASS: POST returned ?\n", Dec(s));
         tests_passed++;
