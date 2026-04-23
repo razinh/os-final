@@ -239,7 +239,7 @@ limine/limine: Makefile limine/*.c limine/*.h limine/Makefile
 LIMINE_FILES := limine.conf limine/limine-bios.sys limine/BOOTX64.EFI
 
 
-${TEST_IMAGES} : build/%.img: build/kernel.elf Makefile limine/limine %.data ${LIMINE_FILES}
+$(filter-out build/t_http.img,${TEST_IMAGES}) : build/%.img: build/kernel.elf Makefile limine/limine %.data ${LIMINE_FILES}
 	# borrowed from https://codeberg.org/Limine/limine-cxx-template/src/branch/trunk/GNUmakefile
 	rm -f $@
 	# zero-filled 20MB raw disk image

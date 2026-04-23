@@ -31,7 +31,7 @@ static void test_get() {
     tests_run++;
     SAY("GET ?:?\n", TARGET_IP, Dec(TARGET_PORT));
 
-    char buf[8192] = {};
+    static char buf[8192] = {};
     int  len = net::HttpClient::get(TARGET_IP, TARGET_PORT, GET_PATH,
                                     buf, sizeof(buf) - 1);
     if (len < 0) {
@@ -58,7 +58,7 @@ static void test_post() {
     tests_run++;
     SAY("POST ?:?\n", TARGET_IP, Dec(TARGET_PORT));
 
-    char buf[8192] = {};
+    static char buf[8192] = {};
     int  len = net::HttpClient::post(TARGET_IP, TARGET_PORT, POST_PATH,
                                      POST_BODY, strlen(POST_BODY),
                                      buf, sizeof(buf) - 1);
@@ -83,10 +83,7 @@ static void test_post() {
 }
 
 void kernel_main() {
-    SAY("STARTING");
     net::net_init();
-
-    SAY("INITALIZED");
 
     test_get();
     test_post();
