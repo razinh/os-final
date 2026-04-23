@@ -218,8 +218,17 @@ int HttpClient::do_request(HttpRequest::Method method, const char* host, uint16_
     char request_buffer[2048];
     size_t request_length = request.build(request_buffer, sizeof(request_buffer));
 
+    // Append body to the same buffer so headers + body go in one TCP segment.
+    // The nic_helper proxy waits for the full response after the first PSH,
+    // so splitting into two sends would leave the server waiting for the body.
+    if (request_body && request_body_length > 0 &&
+        request_length + request_body_length < sizeof(request_buffer)) {
+        memcpy(request_buffer + request_length, request_body, request_body_length);
+        request_length += request_body_length;
+    }
+
     // Create socket
-    int sock = socket_create(SocketType::STREAM);;
+    int sock = socket_create(SocketType::STREAM);
     if (sock < 0) return -1;
 
     // connect to server
@@ -228,18 +237,10 @@ int HttpClient::do_request(HttpRequest::Method method, const char* host, uint16_
         return -1;
     }
 
-    // send request headers
+    // send complete request (headers + body) in one call
     if (socket_send(sock, request_buffer, request_length) < 0) {
         socket_close(sock);
         return -1;
-    }
-
-    // send request body if present
-    if (request_body && request_body_length > 0) {
-        if (socket_send(sock, request_body, request_body_length) < 0) {
-            socket_close(sock);
-            return -1;
-        }
     }
 
     // receive response

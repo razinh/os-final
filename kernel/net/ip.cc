@@ -19,7 +19,10 @@ void init() {
 void send(uint32_t dest_ip, uint8_t protocol,
           const uint8_t* data, uint16_t length) {
     uint8_t dest_mac[6];
-    if (!arp::resolve(dest_ip, dest_mac)) {
+    // For non-local destinations, ARP-resolve the gateway instead
+    uint32_t arp_target = ((dest_ip & arp::MY_NETMASK) == (arp::MY_IP & arp::MY_NETMASK))
+                          ? dest_ip : arp::MY_GATEWAY;
+    if (!arp::resolve(arp_target, dest_mac)) {
         KPRINT("[IP] ARP resolve failed, dropping\n");
         return;
     }

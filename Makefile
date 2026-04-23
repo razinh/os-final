@@ -165,7 +165,7 @@ qemu_config_flags:
 $(TESTS) : % : build/%.img;
 
 clean:
-	rm -rf *.diff *.raw *.out *.result *.failure *.time build *.debug *.cycles *.data
+	rm -rf *.diff *.raw *.out *.result *.failure *.time build *.debug *.cycles *.data tools/nic_helper
 	make -C limine clean
 
 build/%.c.o: %.c Makefile common.flags
@@ -207,7 +207,7 @@ build/khttp/%.cc.o: %.cc Makefile common.flags
 
 build/khttp/%.S.o: %.S Makefile common.flags
 	@mkdir -p "$(dir $@)"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CC) $(filter-out -std%,$(CFLAGS)) $(CPPFLAGS) -c $< -o $@
 
 build/khttp.elf: common.flags Makefile script.ld $(KHTTP_OFILES) $(KHTTP_TEST_OBJ)
 	@mkdir -p build
@@ -227,6 +227,32 @@ build/t_http.img: build/khttp.elf Makefile limine/limine t_http.data ${LIMINE_FI
 
 # t_http needs extra time for network round-trips
 t_http.raw: QEMU_TIMEOUT = 30
+
+# Build the userspace NIC helper (TCP proxy, no root required)
+tools/nic_helper: tools/nic_helper.c
+	$(CC) -O2 -o $@ $<
+
+# Explicit recipe for t_http.raw: starts nic_helper in background before QEMU,
+# kills it afterward.  Overrides the ${TEST_RAWS} static pattern rule.
+t_http.raw: build/t_http.img t_http.data /tmp/nic_shmem Makefile tools/nic_helper
+	@rm -f t_http.raw t_http.failure
+	@touch t_http.failure
+	@echo "*** failed to run, look in t_http.failure for more details" > t_http.raw
+	-(./tools/nic_helper & NIC_HELPER_PID=$$!; \
+	  sleep 0.5; \
+	  ${TIME} --quiet -o t_http.time -f "%E" ${QEMU_TIMEOUT_CMD} 30 ${QEMU_CMD} \
+	    -no-reboot ${QEMU_CONFIG_FLAGS} -nographic --monitor none \
+	    --serial file:t_http.raw \
+	    -drive file=build/t_http.img,index=0,media=disk,format=raw,file.locking=off \
+	    -drive file=t_http.data,index=3,media=disk,format=raw,file.locking=off \
+	    -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+	    -object memory-backend-file,id=shmem,size=1M,mem-path=/tmp/nic_shmem,share=on \
+	    -device ivshmem-plain,memdev=shmem \
+	    > t_http.failure 2>&1; \
+	  RET=$$?; kill $$NIC_HELPER_PID 2>/dev/null; wait $$NIC_HELPER_PID 2>/dev/null; \
+	  if [ $$RET -eq 124 ]; then echo "timeout" > t_http.failure; echo "timeout" > t_http.time; fi)
+	@touch t_http.cycles
+	@-egrep '^@@@ ' t_http.raw > t_http.cycles 2>&1
 
 # Compilation rules for *.S files.
 build/%.S.o: %.S Makefile common.flags
@@ -260,7 +286,7 @@ $(filter-out build/t_http.img,${TEST_IMAGES}) : build/%.img: build/kernel.elf Ma
 	mcopy -i $@@@1M ${LIMINE_FILES} ::/boot/limine >> image.debug 2>&1
 	touch $@
 
-${TEST_RAWS} : %.raw : Makefile %
+$(filter-out t_http.raw,${TEST_RAWS}) : %.raw : Makefile %
 	@rm -f $*.raw $*.failure
 	@touch $*.failure
 	@echo "*** failed to run, look in $*.failure for more details" > $*.raw

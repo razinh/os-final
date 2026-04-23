@@ -19,7 +19,9 @@ struct __attribute__((packed)) ArpPacket {
 namespace arp {
 
 // Our IP address in host byte order (10.0.2.15 — QEMU guest default)
-constexpr uint32_t MY_IP = 0x0A00020Fu;
+constexpr uint32_t MY_IP      = 0x0A00020Fu;  // 10.0.2.15
+constexpr uint32_t MY_GATEWAY = 0x0A000202u;  // 10.0.2.2
+constexpr uint32_t MY_NETMASK = 0xFFFFFF00u;  // /24
 
 void init();
 
