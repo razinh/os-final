@@ -236,7 +236,7 @@ int HttpClient::do_request(HttpRequest::Method method, const char* host, uint16_
     size_t request_length = request.build(request_buffer, sizeof(request_buffer));
 
     // Append the body to the same buffer directly so the headers and body arrive in the same TCP segment.
-    // The nic_helper proxy waits for the full response after the first TCP PSH, so splitting into two sends would \
+    // The nic_helper proxy waits for the full response after the first TCP PSH, so splitting into two sends would 
     // stall and leave the server waiting for the body.
     if (request_body && request_body_length > 0 &&
         request_length + request_body_length < sizeof(request_buffer)) {

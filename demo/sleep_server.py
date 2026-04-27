@@ -21,7 +21,7 @@ class SleepHandler(http.server.BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
         parsed_params = urllib.parse.parse_qs(post_data)
-        seconds_str = parsed_params.get('seconds', [None])[0]
+        seconds_str = parsed_params.get('msg', [None])[0]
 
         if seconds_str and seconds_str.isdigit():
             seconds = int(seconds_str)

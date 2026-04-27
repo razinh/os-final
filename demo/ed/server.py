@@ -146,7 +146,7 @@ def _start_background_loop(loop: asyncio.AbstractEventLoop) -> None:
 
 def main() -> None:
     host = os.getenv("ED_HOST", "127.0.0.1")
-    port = int(os.getenv("ED_PORT", "8080"))
+    port = int(os.getenv("ED_PORT", "8000"))
     course_id = int(os.getenv("ED_COURSE_ID", "93170"))
 
     ed_loop = asyncio.new_event_loop()
