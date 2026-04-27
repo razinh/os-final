@@ -1,28 +1,16 @@
-// Kernel-integrated HTTP test entry point.
-// initialises the network stack, issues one GET and
-// one POST to TARGET_IP:TARGET_PORT, prints PASS / FAIL, then shuts
-// the kernel down cleanly.
-//
-// Build + run:
-//   make -f Makefile.kernel_http          # build the image
-//   make -f Makefile.kernel_http run      # run in QEMU
-
 #include "kernel/net/http.h"
 #include "kernel/net/net_init.h"
 #include "kernel/print.h"
 #include "kernel/machine.h"
 
-// ============================================================
-// TARGET DETAILS
-// ============================================================
-static const char*    TARGET_IP   = "128.83.120.168";   // e.g. "192.168.1.42"
-static const uint16_t TARGET_PORT = 8000;                 // e.g. 8080
-static const char*    GET_PATH    = "/";                // e.g. "/api/items"
-static const char*    POST_PATH   = "/";                // e.g. "/api/items"
-static const char*    POST_BODY   = "msg=1";         // form-encoded or JSON body
-// ============================================================
 
-static int tests_run    = 0;
+static const char*    TARGET_IP   = "128.83.120.168";
+static const uint16_t TARGET_PORT = 8000;
+static const char*    GET_PATH    = "/";
+static const char*    POST_PATH   = "/";
+static const char*    POST_BODY   = "msg=1";
+
+static int tests_run = 0;
 static int tests_passed = 0;
 
 static void test_get() {
@@ -30,8 +18,7 @@ static void test_get() {
     SAY("GET ?:?\n", TARGET_IP, Dec(TARGET_PORT));
 
     static char buf[8192] = {};
-    int  len = net::HttpClient::get(TARGET_IP, TARGET_PORT, GET_PATH,
-                                    buf, sizeof(buf) - 1);
+    int  len = net::HttpClient::get(TARGET_IP, TARGET_PORT, GET_PATH, buf, sizeof(buf) - 1);
     if (len < 0) {
         SAY("FAIL: GET connection error (len=?)\n", Dec(len));
         return;
@@ -57,9 +44,7 @@ static void test_post() {
     SAY("POST ?:?\n", TARGET_IP, Dec(TARGET_PORT));
 
     static char buf[8192] = {};
-    int  len = net::HttpClient::post(TARGET_IP, TARGET_PORT, POST_PATH,
-                                     POST_BODY, strlen(POST_BODY),
-                                     buf, sizeof(buf) - 1);
+    int  len = net::HttpClient::post(TARGET_IP, TARGET_PORT, POST_PATH, POST_BODY, strlen(POST_BODY), buf, sizeof(buf) - 1);
     if (len < 0) {
         SAY("FAIL: POST connection error (len=?)\n", Dec(len));
         return;
