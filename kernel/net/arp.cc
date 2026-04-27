@@ -9,9 +9,9 @@ namespace net {
 namespace arp {
 
 struct ArpEntry {
-    uint32_t ip;       // host byte order
-    uint8_t  mac[6];
-    bool     valid;
+    uint32_t ip;
+    uint8_t mac[6];
+    bool valid;
 };
 
 static constexpr size_t TABLE_SIZE = 16;
@@ -31,8 +31,8 @@ static void table_insert(uint32_t ip, const uint8_t mac[6]) {
             return;
         }
     }
-    // Full: evict slot 0
-    table[0] = { ip, {}, true };
+
+    table[0] = { ip, {}, true }; // remove 0 index
     memcpy(table[0].mac, mac, 6);
 }
 
@@ -46,9 +46,9 @@ void send_request(uint32_t target_ip) {
     ArpPacket pkt{};
     pkt.htype = hton16(1);
     pkt.ptype = hton16(0x0800);
-    pkt.hlen  = 6;
-    pkt.plen  = 4;
-    pkt.oper  = hton16(1); // request
+    pkt.hlen = 6;
+    pkt.plen = 4;
+    pkt.oper = hton16(1);
 
     memcpy(pkt.sha, NIC::MAC, 6);
 
@@ -60,8 +60,7 @@ void send_request(uint32_t target_ip) {
     memcpy(pkt.tpa, &target_n, 4);
 
     static constexpr uint8_t bcast[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
-    ethernet::send(bcast, ethernet::ETHERTYPE_ARP,
-                   reinterpret_cast<const uint8_t*>(&pkt), sizeof(pkt));
+    ethernet::send(bcast, ethernet::ETHERTYPE_ARP, reinterpret_cast<const uint8_t*>(&pkt), sizeof(pkt));
 }
 
 void handle(const uint8_t* payload, size_t len) {
@@ -73,10 +72,8 @@ void handle(const uint8_t* payload, size_t len) {
     memcpy(&sender_ip_n, pkt->spa, 4);
     uint32_t sender_ip = ntoh32(sender_ip_n);
 
-    // Learn the sender's MAC unconditionally
     table_insert(sender_ip, pkt->sha);
 
-    // If this is a request targeting our IP, send a reply
     if (ntoh16(pkt->oper) == 1) {
         uint32_t target_ip_n;
         memcpy(&target_ip_n, pkt->tpa, 4);
@@ -84,9 +81,9 @@ void handle(const uint8_t* payload, size_t len) {
             ArpPacket reply{};
             reply.htype = hton16(1);
             reply.ptype = hton16(0x0800);
-            reply.hlen  = 6;
-            reply.plen  = 4;
-            reply.oper  = hton16(2); // reply
+            reply.hlen = 6;
+            reply.plen = 4;
+            reply.oper = hton16(2);
 
             memcpy(reply.sha, NIC::MAC, 6);
             uint32_t my_ip_n = hton32(MY_IP);
@@ -94,8 +91,7 @@ void handle(const uint8_t* payload, size_t len) {
             memcpy(reply.tha, pkt->sha, 6);
             memcpy(reply.tpa, pkt->spa, 4);
 
-            ethernet::send(pkt->sha, ethernet::ETHERTYPE_ARP,
-                           reinterpret_cast<const uint8_t*>(&reply), sizeof(reply));
+            ethernet::send(pkt->sha, ethernet::ETHERTYPE_ARP, reinterpret_cast<const uint8_t*>(&reply), sizeof(reply));
         }
     }
 }
@@ -111,16 +107,22 @@ bool lookup(uint32_t ip, uint8_t mac_out[6]) {
 }
 
 bool resolve(uint32_t ip, uint8_t mac_out[6]) {
-    if (lookup(ip, mac_out)) return true;
+    if (lookup(ip, mac_out)){ 
+        return true;
+    }
     send_request(ip);
+
+
     for (int i = 0; i < 10000; i++) {
         NIC::poll();
-        if (lookup(ip, mac_out)) return true;
+        if (lookup(ip, mac_out)){
+            return true;   
+        }
     }
     KPRINT("[ARP] resolve timeout\n");
     return false;
 }
 
-} // namespace arp
-} // namespace net
+}
+}
 
