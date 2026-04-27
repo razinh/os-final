@@ -14,14 +14,13 @@ namespace net {
 
 // Scan PCI bus 0 for the ivshmem-plain device (vendor 0x1AF4, device 0x1110)
 // and return the physical base address of its shared memory BAR.
-// ivshmem-plain exposes the shmem at BAR 2 (QEMU >=5.x) or BAR 0 (older).
 static uintptr_t find_ivshmem_phys() {
     for (uint8_t dev = 0; dev < 32; dev++) {
         uint32_t id = pci_config_read32(0, dev, 0, 0x00);
         if ((id & 0xFFFF) == 0xFFFF) continue;
         if ((id & 0xFFFF) != 0x1AF4 || (id >> 16) != 0x1110) continue;
 
-        // Check BAR 2 first (modern QEMU), then BAR 0 (older QEMU)
+        // Check BAR 2 first (corresponding to modern QEMU), then BAR 0 (older QEMU)
         uint8_t bar_offsets[2] = {0x18, 0x10};
         for (int k = 0; k < 2; k++) {
             uint32_t bar = pci_config_read32(0, dev, 0, bar_offsets[k]);
@@ -60,10 +59,7 @@ void NIC::init() {
     }
 
     // Map the ivshmem physical region into kernel virtual address space.
-    // The kernel uses a Higher Half Direct Map (HHDM): VA = PA + Sys::hhdm_offset.
-    // We call impl::map() for each page so the kernel page tables have valid
-    // entries before we dereference mem_.
-    const size_t    pages = (sizeof(SharedNICMemory) + FRAME_SIZE - 1) >> LOG_FRAME_SIZE;
+    const size_t pages = (sizeof(SharedNICMemory) + FRAME_SIZE - 1) >> LOG_FRAME_SIZE;
 
     for (size_t i = 0; i < pages; i++) {
         PA pa(phys + i * FRAME_SIZE);

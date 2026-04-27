@@ -1,21 +1,19 @@
 // Kernel-integrated HTTP test entry point.
-// Replaces kernel_main.cc: initialises the network stack, issues one GET and
-// one POST to TARGET_IP:TARGET_PORT, prints *** PASS / *** FAIL, then shuts
+// initialises the network stack, issues one GET and
+// one POST to TARGET_IP:TARGET_PORT, prints PASS / FAIL, then shuts
 // the kernel down cleanly.
 //
 // Build + run:
-//   make -f Makefile.kernel_http          # build the bootable image
-//   make -f Makefile.kernel_http run      # boot in QEMU (serial → stdout)
+//   make -f Makefile.kernel_http          # build the image
+//   make -f Makefile.kernel_http run      # run in QEMU
 
-// Use full "kernel/..." paths so we get the real headers, not the no-op stubs
-// that live in kernel/test/ (print.h, machine.h, etc.).
 #include "kernel/net/http.h"
 #include "kernel/net/net_init.h"
 #include "kernel/print.h"
-#include "kernel/machine.h"   // strlen
+#include "kernel/machine.h"
 
 // ============================================================
-//  FILL IN YOUR TARGET DETAILS
+// TARGET DETAILS
 // ============================================================
 static const char*    TARGET_IP   = "128.83.120.168";   // e.g. "192.168.1.42"
 static const uint16_t TARGET_PORT = 8000;                 // e.g. 8080
